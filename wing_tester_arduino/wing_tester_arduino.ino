@@ -10,8 +10,7 @@ HX711 scale12;
 HX711 scale34;
 HX711 scale56;
 
-const char start = '[';
-const char ending[] = "]\n";
+const char ending[] = "\n";
 const char separator = ';';
 
 long readings[6];
@@ -29,6 +28,7 @@ void setup() {
   scale12.begin(DOUT12, CLK12);
   scale34.begin(DOUT34, CLK34);
   scale56.begin(DOUT56, CLK56);
+  delay(1000); // Delay for chips to start
 }
 
 void loop() {
@@ -52,17 +52,14 @@ void loop() {
 #else
   /* Normal operation
     Reads all possible values for the system.
-
     NOTE: Due to the operation of the HX711 chips the gain setting is not 
     as expected (e.g. setting it to 32 before reading for channel B). This 
     is due to us waiting for data being ready before setting the gain and 
     then reading.
-
     The data readied for us to read is from the previous gain setting since 
     the gain change has not had the time to come into effect on the data 
     prepared. So what we are effectively doing is setting the gain for the 
     next reading not the one that immediately follows a gain change.
-
     ALSO NOTE: For a given HX711 channel A is the even numbered header, 
     channel B is used for the odd numbered header.
   */
@@ -113,12 +110,10 @@ void loop() {
   }
 
   String data = "";
-  data.concat(start);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 6; i++) {
     data.concat(readings[i]);
     data.concat(separator);
   }
-  data.concat(readings[5]);
   data.concat(ending);
 
   Serial.print(data);
