@@ -48,66 +48,60 @@ void loop() {
   Serial.print(separator);
   Serial.print(0);
   Serial.print(ending);
-  i++;
+  i++;  
+  delay(100);
 #else
   /* Normal operation
     Reads all possible values for the system.
+
     NOTE: Due to the operation of the HX711 chips the gain setting is not 
     as expected (e.g. setting it to 32 before reading for channel B). This 
     is due to us waiting for data being ready before setting the gain and 
     then reading.
+    
     The data readied for us to read is from the previous gain setting since 
     the gain change has not had the time to come into effect on the data 
     prepared. So what we are effectively doing is setting the gain for the 
     next reading not the one that immediately follows a gain change.
+
     ALSO NOTE: For a given HX711 channel A is the even numbered header, 
     channel B is used for the odd numbered header.
+
+    To make reads faster all chips are read for one channel then swapped to 
+    the other channel so we only have to wait for one refresh period across 
+    all the chips rather then reading A and B for each chip sequentially.
   */
+
   
-  if (scale12.is_ready()) {
-    // With a gain factor of 64 or 128, channel A is selected for the next read
-    scale12.set_gain(128); 
-    readings[0] = scale12.read();
+  // Read all the odd load cell ports (channel Bs)
+  scale12.wait_ready(1); // Wait in 1ms increments until ready to read  
+  // With a gain factor of 64 or 128, channel A is selected for the next read
+  scale12.set_gain(128); 
+  readings[0] = scale12.read();
 
-    scale12.wait_ready(1); // Wait in 1ms increments until ready to read
+  scale34.wait_ready(1);
+  scale34.set_gain(128);
+  readings[2] = scale34.read();
 
-    // With a gain factor of 32, channel B is selected for the next read
-    scale12.set_gain(32); 
-    readings[1] = scale12.read();
-  } else {
-    readings[0] = 0;
-    readings[1] = 0;
-  }
+  scale56.wait_ready(1);
+  scale56.set_gain(128);
+  readings[4] = scale56.read();
 
-  if (scale34.is_ready()) {
-    // With a gain factor of 64 or 128, channel A is selected for the next read
-    scale34.set_gain(128);
-    readings[2] = scale34.read();
 
-    scale34.wait_ready(1); // Wait in 1ms increments until ready to read
+  // Read all the even load cell ports (channel As)
+  scale12.wait_ready(1);
+  // With a gain factor of 32, channel B is selected for the next read
+  scale12.set_gain(32); 
+  readings[1] = scale12.read();
 
-    // With a gain factor of 32, channel B is selected for the next read
-    scale34.set_gain(32);
-    readings[3] = scale34.read();
-  } else {
-    readings[2] = 0;
-    readings[3] = 0;
-  }
+  scale34.wait_ready(1);
+  scale34.set_gain(32);
+  readings[3] = scale34.read();
 
-  if (scale56.is_ready()) {
-    // With a gain factor of 64 or 128, channel A is selected for the next read
-    scale56.set_gain(128);
-    readings[4] = scale56.read();
+  scale56.wait_ready(1);
+  scale56.set_gain(32);
+  readings[5] = scale56.read();
 
-    scale56.wait_ready(1); // Wait in 1ms increments until ready to read
-
-    // With a gain factor of 32, channel B is selected for the next read
-    scale56.set_gain(32);
-    readings[5] = scale56.read();
-  } else {
-    readings[4] = 0;
-    readings[5] = 0;
-  }
 
   String data = "";
   for (int i = 0; i < 6; i++) {
@@ -118,6 +112,4 @@ void loop() {
 
   Serial.print(data);
 #endif
-  
-  delay(100);
 }
